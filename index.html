@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视力宝60s销量趋势图</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin: 30px 0 20px;
+            font-size: 1.5em;
+        }
+        .chart-container {
+            position: relative;
+            height: 60vh;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 8px;
+        }
+        .summary h3 {
+            color: #0056b3;
+            margin-top: 0;
+        }
+        .stat-boxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 200px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .year-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .year-box {
+            flex: 1;
+            min-width: 250px;
+            max-width: 320px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .year-box h4 {
+            text-align: center;
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .year-total {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            color: #0056b3;
+        }
+        .season-stats {
+            margin-top: 10px;
+        }
+        .season-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 6px 10px;
+            background-color: #f0f7ff;
+            border-radius: 4px;
+        }
+        .year-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+        .detail-row:nth-child(odd) {
+            background-color: #f8f8f8;
+        }
+        .detail-label {
+            font-weight: 500;
+            color: #444;
+        }
+        .detail-value {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .season-label {
+            font-weight: 500;
+            color: #444;
+        }
+        .season-value {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .highlight-high {
+            color: #28a745;
+        }
+        .highlight-low {
+            color: #dc3545;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .control-btn {
+            padding: 8px 15px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .control-btn:hover {
+            background-color: #003d82;
+        }
+        .promotional-chart {
+            margin-top: 40px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 50vh;
+            }
+            .year-stats {
+                flex-direction: column;
+                align-items: center;
+            }
+            .year-box {
+                width: 100%;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>视力宝60s销量趋势图 (2022年1月-2025年2月)</h1>
+        
+        <div class="controls">
+            <button class="control-btn" id="viewAll">查看全部</button>
+            <button class="control-btn" id="view2022">2022年</button>
+            <button class="control-btn" id="view2023">2023年</button>
+            <button class="control-btn" id="view2024">2024年</button>
+            <button class="control-btn" id="viewRecent">最近12个月</button>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+        
+        <h2>年度销量与详细数据分析</h2>
+        
+        <div class="year-stats">
+            <div class="year-box">
+                <h4>2022年销量统计</h4>
+                <div class="year-total" id="total2022">0</div>
+                <div class="detail-row">
+                    <span class="detail-label">月均销量:</span>
+                    <span class="detail-value" id="avg2022">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最高销量:</span>
+                    <span class="detail-value highlight-high" id="max2022">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最低销量:</span>
+                    <span class="detail-value highlight-low" id="min2022">0</span>
+                </div>
+                <div class="season-stats">
+                    <div class="season-row">
+                        <span class="season-label">2-3月促销期:</span>
+                        <span class="season-value" id="promo1_2022">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">5-6月促销期:</span>
+                        <span class="season-value" id="promo2_2022">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">10-11月促销期:</span>
+                        <span class="season-value" id="promo3_2022">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="year-box">
+                <h4>2023年销量统计</h4>
+                <div class="year-total" id="total2023">0</div>
+                <div class="detail-row">
+                    <span class="detail-label">月均销量:</span>
+                    <span class="detail-value" id="avg2023">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最高销量:</span>
+                    <span class="detail-value highlight-high" id="max2023">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最低销量:</span>
+                    <span class="detail-value highlight-low" id="min2023">0</span>
+                </div>
+                <div class="season-stats">
+                    <div class="season-row">
+                        <span class="season-label">2-3月促销期:</span>
+                        <span class="season-value" id="promo1_2023">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">5-6月促销期:</span>
+                        <span class="season-value" id="promo2_2023">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">10-11月促销期:</span>
+                        <span class="season-value" id="promo3_2023">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="year-box">
+                <h4>2024年销量统计</h4>
+                <div class="year-total" id="total2024">0</div>
+                <div class="detail-row">
+                    <span class="detail-label">月均销量:</span>
+                    <span class="detail-value" id="avg2024">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最高销量:</span>
+                    <span class="detail-value highlight-high" id="max2024">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">最低销量:</span>
+                    <span class="detail-value highlight-low" id="min2024">0</span>
+                </div>
+                <div class="season-stats">
+                    <div class="season-row">
+                        <span class="season-label">2-3月促销期:</span>
+                        <span class="season-value" id="promo1_2024">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">5-6月促销期:</span>
+                        <span class="season-value" id="promo2_2024">0</span>
+                    </div>
+                    <div class="season-row">
+                        <span class="season-label">10-11月促销期:</span>
+                        <span class="season-value" id="promo3_2024">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="promotional-chart">
+            <h2>促销季节销量对比</h2>
+            <div class="chart-container">
+                <canvas id="promotionalChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h3>销量统计概况</h3>
+            <div class="stat-boxes">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalSales">0</div>
+                    <div class="stat-label">总销量</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="avgSales">0</div>
+                    <div class="stat-label">月均销量</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="maxSales">0</div>
+                    <div class="stat-label">最高月销量</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="minSales">0</div>
+                    <div class="stat-label">最低月销量</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 销量数据
+            const salesData = [
+                // 2022年数据
+                19292, 24688, 27072, 24612, 29997, 34117, 22325, 23507, 22754, 37950, 38918, 31119,
+                // 2023年数据
+                16963, 28595, 22375, 22227, 17339, 31115, 10330, 14161, 20664, 20296, 34818, 19090,
+                // 2024年数据
+                14274, 10245, 16379, 11352, 15668, 10451, 6352, 8988, 5900, 10731, 12117, 5697,
+                // 2025年数据
+                4279, 7868
+            ];
+
+            // 月份标签
+            const labels = [
+                // 2022年
+                '22年1月', '22年2月', '22年3月', '22年4月', '22年5月', '22年6月', 
+                '22年7月', '22年8月', '22年9月', '22年10月', '22年11月', '22年12月',
+                // 2023年
+                '23年1月', '23年2月', '23年3月', '23年4月', '23年5月', '23年6月', 
+                '23年7月', '23年8月', '23年9月', '23年10月', '23年11月', '23年12月',
+                // 2024年
+                '24年1月', '24年2月', '24年3月', '24年4月', '24年5月', '24年6月', 
+                '24年7月', '24年8月', '24年9月', '24年10月', '24年11月', '24年12月',
+                // 2025年
+                '25年1月', '25年2月'
+            ];
+
+            // 获取每年数据
+            const data2022 = salesData.slice(0, 12);
+            const data2023 = salesData.slice(12, 24);
+            const data2024 = salesData.slice(24, 36);
+            
+            const labels2022 = labels.slice(0, 12);
+            const labels2023 = labels.slice(12, 24);
+            const labels2024 = labels.slice(24, 36);
+
+            // 计算年度销量
+            const sales2022 = data2022.reduce((sum, value) => sum + value, 0);
+            const sales2023 = data2023.reduce((sum, value) => sum + value, 0);
+            const sales2024 = data2024.reduce((sum, value) => sum + value, 0);
+
+            // 计算年度月均销量
+            const avg2022 = Math.round(sales2022 / 12);
+            const avg2023 = Math.round(sales2023 / 12);
+            const avg2024 = Math.round(sales2024 / 12);
+
+            // 计算年度最高销量及对应月份
+            const max2022Value = Math.max(...data2022);
+            const max2022Index = data2022.indexOf(max2022Value);
+            const max2022Month = labels2022[max2022Index];
+
+            const max2023Value = Math.max(...data2023);
+            const max2023Index = data2023.indexOf(max2023Value);
+            const max2023Month = labels2023[max2023Index];
+
+            const max2024Value = Math.max(...data2024);
+            const max2024Index = data2024.indexOf(max2024Value);
+            const max2024Month = labels2024[max2024Index];
+
+            // 计算年度最低销量及对应月份
+            const min2022Value = Math.min(...data2022);
+            const min2022Index = data2022.indexOf(min2022Value);
+            const min2022Month = labels2022[min2022Index];
+
+            const min2023Value = Math.min(...data2023);
+            const min2023Index = data2023.indexOf(min2023Value);
+            const min2023Month = labels2023[min2023Index];
+
+            const min2024Value = Math.min(...data2024);
+            const min2024Index = data2024.indexOf(min2024Value);
+            const min2024Month = labels2024[min2024Index];
+
+            // 计算促销期销量
+            // 2-3月、5-6月、10-11月
+            const promo1_2022 = data2022[1] + data2022[2]; // 2022年2-3月
+            const promo2_2022 = data2022[4] + data2022[5]; // 2022年5-6月
+            const promo3_2022 = data2022[9] + data2022[10]; // 2022年10-11月
+
+            const promo1_2023 = data2023[1] + data2023[2]; // 2023年2-3月
+            const promo2_2023 = data2023[4] + data2023[5]; // 2023年5-6月
+            const promo3_2023 = data2023[9] + data2023[10]; // 2023年10-11月
+
+            const promo1_2024 = data2024[1] + data2024[2]; // 2024年2-3月
+            const promo2_2024 = data2024[4] + data2024[5]; // 2024年5-6月
+            const promo3_2024 = data2024[9] + data2024[10]; // 2024年10-11月
+
+            // 更新年度销量和月均销量
+            document.getElementById('total2022').textContent = sales2022.toLocaleString();
+            document.getElementById('total2023').textContent = sales2023.toLocaleString();
+            document.getElementById('total2024').textContent = sales2024.toLocaleString();
+
+            document.getElementById('avg2022').textContent = avg2022.toLocaleString() + " 件/月";
+            document.getElementById('avg2023').textContent = avg2023.toLocaleString() + " 件/月";
+            document.getElementById('avg2024').textContent = avg2024.toLocaleString() + " 件/月";
+
+            // 更新最高/最低销量及月份
+            document.getElementById('max2022').textContent = `${max2022Month}: ${max2022Value.toLocaleString()} 件`;
+            document.getElementById('max2023').textContent = `${max2023Month}: ${max2023Value.toLocaleString()} 件`;
+            document.getElementById('max2024').textContent = `${max2024Month}: ${max2024Value.toLocaleString()} 件`;
+
+            document.getElementById('min2022').textContent = `${min2022Month}: ${min2022Value.toLocaleString()} 件`;
+            document.getElementById('min2023').textContent = `${min2023Month}: ${min2023Value.toLocaleString()} 件`;
+            document.getElementById('min2024').textContent = `${min2024Month}: ${min2024Value.toLocaleString()} 件`;
+
+            // 更新促销期销量
+            document.getElementById('promo1_2022').textContent = promo1_2022.toLocaleString() + " 件";
+            document.getElementById('promo2_2022').textContent = promo2_2022.toLocaleString() + " 件";
+            document.getElementById('promo3_2022').textContent = promo3_2022.toLocaleString() + " 件";
+
+            document.getElementById('promo1_2023').textContent = promo1_2023.toLocaleString() + " 件";
+            document.getElementById('promo2_2023').textContent = promo2_2023.toLocaleString() + " 件";
+            document.getElementById('promo3_2023').textContent = promo3_2023.toLocaleString() + " 件";
+
+            document.getElementById('promo1_2024').textContent = promo1_2024.toLocaleString() + " 件";
+            document.getElementById('promo2_2024').textContent = promo2_2024.toLocaleString() + " 件";
+            document.getElementById('promo3_2024').textContent = promo3_2024.toLocaleString() + " 件";
+
+            // 总体统计数据
+            const totalSales = salesData.reduce((sum, value) => sum + value, 0);
+            const avgSales = Math.round(totalSales / salesData.length);
+            const maxSales = Math.max(...salesData);
+            const minSales = Math.min(...salesData);
+
+            // 更新统计框
+            document.getElementById('totalSales').textContent = totalSales.toLocaleString();
+            document.getElementById('avgSales').textContent = avgSales.toLocaleString();
+            document.getElementById('maxSales').textContent = maxSales.toLocaleString();
+            document.getElementById('minSales').textContent = minSales.toLocaleString();
+
+            // 设置年度颜色
+            const backgroundColors = [
+                ...Array(12).fill('rgba(54, 162, 235, 0.7)'), // 2022年
+                ...Array(12).fill('rgba(255, 99, 132, 0.7)'),  // 2023年
+                ...Array(12).fill('rgba(75, 192, 192, 0.7)'),  // 2024年
+                ...Array(2).fill('rgba(153, 102, 255, 0.7)')   // 2025年
+            ];
+
+            const borderColors = [
+                ...Array(12).fill('rgba(54, 162, 235, 1)'), // 2022年
+                ...Array(12).fill('rgba(255, 99, 132, 1)'),  // 2023年
+                ...Array(12).fill('rgba(75, 192, 192, 1)'),  // 2024年
+                ...Array(2).fill('rgba(153, 102, 255, 1)')   // 2025年
+            ];
+
+            // 创建月度销量图表
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            const salesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '视力宝60s销量',
+                        data: salesData,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '销量 (件)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '月份'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `销量: ${context.raw.toLocaleString()} 件`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // 创建促销季节销量对比图表
+            const promoCtx = document.getElementById('promotionalChart').getContext('2d');
+            const promoChart = new Chart(promoCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['2-3月促销期', '5-6月促销期', '10-11月促销期'],
+                    datasets: [
+                        {
+                            label: '2022年',
+                            data: [promo1_2022, promo2_2022, promo3_2022],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '2023年',
+                            data: [promo1_2023, promo2_2023, promo3_2023],
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '2024年',
+                            data: [promo1_2024, promo2_2024, promo3_2024],
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '销量 (件)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '促销季节'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()} 件`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 添加按钮功能
+            document.getElementById('viewAll').addEventListener('click', function() {
+                updateChart(0, labels.length);
+            });
+
+            document.getElementById('view2022').addEventListener('click', function() {
+                updateChart(0, 12);
+            });
+
+            document.getElementById('view2023').addEventListener('click', function() {
+                updateChart(12, 24);
+            });
+
+            document.getElementById('view2024').addEventListener('click', function() {
+                updateChart(24, 36);
+            });
+
+            document.getElementById('viewRecent').addEventListener('click', function() {
+                updateChart(labels.length - 12, labels.length);
+            });
+
+            function updateChart(start, end) {
+                salesChart.data.labels = labels.slice(start, end);
+                salesChart.data.datasets[0].data = salesData.slice(start, end);
+                salesChart.data.datasets[0].backgroundColor = backgroundColors.slice(start, end);
+                salesChart.data.datasets[0].borderColor = borderColors.slice(start, end);
+                salesChart.update();
+            }
+        });
+    </script>
+</body>
+</html>
